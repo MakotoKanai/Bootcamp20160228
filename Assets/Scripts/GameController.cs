@@ -7,8 +7,12 @@ public class GameController : MonoBehaviour
     public GameObject player;
     public GameObject firstFloor;
     public GameObject titleCanvas;
+    public GameObject ResultLabel;
 
     public float firstFloorApperedTime = 5.0f;
+	public float limitTime;
+
+    public float floorMovingTime = 10.0f;
 
     public int maxCreateFloorNum = 6;
     // ゲーム領域内に生成しておくフロアセットの数
@@ -19,8 +23,6 @@ public class GameController : MonoBehaviour
 
     public float limitAliveFloor = 2.0f;
     public float floorSpeed = 0.03f;
-
-    public float floorMovingTime = 3.0f;
 
     private Coroutine playerJumpRutine = null;
     private Coroutine floorRotationRutine = null;
@@ -48,6 +50,7 @@ public class GameController : MonoBehaviour
         // プレイヤをアクティブにして初期位置に
         player.SetActive(true);
         player.GetComponent<PlayerMove>().PlayerSpown();
+        player.GetComponent<PlayerMove>().SetTime();
 
         // 初期位置フロアを出現
         firstFloor.SetActive(true);
@@ -63,7 +66,7 @@ public class GameController : MonoBehaviour
 
     public void GameExit()
     {
-        player.SetActive(false);
+        //player.SetActive(false);
         firstFloor.SetActive(false);
         titleCanvas.SetActive(true);
         foreach (Transform floorSet in floorContainer.transform)
@@ -134,12 +137,14 @@ public class GameController : MonoBehaviour
             return;
         
         // プレイヤキャラクタのジャンプ操作
+		/*
         // TODO:
-        /*bool doJump = Input.GetButton("Fire1");
+        bool doJump = Input.GetButton("Fire1");
         if (doJump)
         {
             playerJumpRutine = StartCoroutine(CreatePlayerJumpRutine());
-        }*/
+        }
+		*/
 
         // 足場の回転操作
         bool doRotation = Input.GetButton("Fire2");
@@ -227,7 +232,8 @@ public class GameController : MonoBehaviour
 
         while ((passTime += Time.deltaTime) <= limitTime)
         {
-            rotateAngle = maxRotateAngle * passTime / limitTime;
+            float per = passTime / limitTime;
+            rotateAngle = maxRotateAngle * per * per;
             for (int i=0; i < rotateTransforms.Count; ++i)
             {
                 GameObject floorSet = (GameObject)rotateTransforms[i];
@@ -262,13 +268,27 @@ public class GameController : MonoBehaviour
         gameOverRutine = null;
     }
 
+    public void StartResult()
+    {
+        gameOverRutine = StartCoroutine(CreateGameOverRutine());
+    }
+
     IEnumerator CreateGameOverRutine()
     {
         Debug.Log("GameOver");
 
         yield return null;
 
+        ResultLabel.SetActive(true);
+
+        float passTime = 0f;
+        while((passTime += Time.deltaTime) < 10f)
+        {
+            yield return null;
+        }
+
         GameExit();
+        ResultLabel.SetActive(false);
 
         gameOverRutine = null;
     }

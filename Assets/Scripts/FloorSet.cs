@@ -7,6 +7,8 @@ public class FloorSet : MonoBehaviour
 
     public int maxCreateNum;
     public float distance;
+	Vector3 currentposition;
+	Vector3 diff;
     public bool IsNotReached { get; set; }
 
     public GameController controller;
@@ -33,6 +35,14 @@ public class FloorSet : MonoBehaviour
             float angle = angleMargin * i;
             child.position = transform.rotation * new Vector3(distance * Mathf.Cos(angle), distance * Mathf.Sin(angle), 0);
             child.rotation = Quaternion.Euler(0, 0, transform.parent.rotation.eulerAngles.z);
+			/*if (currentposition == null)
+				diff = Vector3.zero;
+			else {
+				diff = child.position - currentposition;
+			}
+			Debug.Log ("diff:"+diff);
+				
+			currentposition = child.position;*/
         }
     }
 }
