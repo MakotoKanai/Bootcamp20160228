@@ -188,6 +188,15 @@ public class GameController : MonoBehaviour
         floorRotationRutine = null;
     }
 
+    IEnumerator CreateGameStartRutine()
+    {
+        Debug.Log("GameStart");
+
+        yield return null;
+
+        gameOverRutine = null;
+    }
+
     IEnumerator CreateGameOverRutine()
     {
         Debug.Log("GameOver");
