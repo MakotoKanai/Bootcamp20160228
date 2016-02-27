@@ -53,7 +53,7 @@ public class GameController : MonoBehaviour
         PlayerInput();
 
         // プレイヤのスクロール
-        player.transform.position += new Vector3(-floorSpeed, 0, 0);
+        //player.transform.position += new Vector3(-floorSpeed, 0, 0);
         /*if (nowFloorGettingOn != null)
         {
             player.transform.position = new Vector3(nowFloorGettingOn.distance, playerDefaultY, 0);
