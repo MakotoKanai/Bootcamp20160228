@@ -5,6 +5,10 @@ public class GameController : MonoBehaviour
 {
     public GameObject floorContainer;
     public GameObject player;
+    public GameObject firstFloor;
+    public GameObject titleCanvas;
+
+    public float firstFloorApperedTime = 5.0f;
 
     public int maxCreateFloorNum = 6;
     // ゲーム領域内に生成しておくフロアセットの数
@@ -16,11 +20,13 @@ public class GameController : MonoBehaviour
     public float limitAliveFloor = 2.0f;
     public float floorSpeed = 0.03f;
 
+    public float floorMovingTime = 3.0f;
+
     private Coroutine playerJumpRutine = null;
     private Coroutine floorRotationRutine = null;
     private Coroutine gameOverRutine = null;
 
-    private FloorSet nowFloorGettingOn = null;
+    public FloorSet nowFloorGettingOn = null;
     private FloorGenerator floorGenerator = null;
 
     public bool IsPlayerJumping { get { return playerJumpRutine != null; } }
@@ -28,13 +34,45 @@ public class GameController : MonoBehaviour
     public bool IsGameOver { get { return gameOverRutine != null; } }
 
     private float playerDefaultY = 1.0f;
+    private bool isGame = false;
+    public bool IsGame { get { return isGame; } }
 
     void Start ()
     {
         floorGenerator = GetComponent<FloorGenerator>();
         playerDefaultY = player.transform.position.y;
     }
-	
+
+    public void GameStart()
+    {
+        // プレイヤをアクティブにして初期位置に
+        player.SetActive(true);
+        player.GetComponent<PlayerMove>().PlayerSpown();
+
+        // 初期位置フロアを出現
+        firstFloor.SetActive(true);
+        // firstFloorApperedTime 秒後に消滅させる
+        Invoke("KillFirstFloor", firstFloorApperedTime);
+
+        isGame = true;
+    }
+    void KillFirstFloor()
+    {
+        firstFloor.SetActive(false);
+    }
+
+    public void GameExit()
+    {
+        player.SetActive(false);
+        firstFloor.SetActive(false);
+        titleCanvas.SetActive(true);
+        foreach (Transform floorSet in floorContainer.transform)
+        {
+            Destroy(floorSet.gameObject);
+        }
+        isGame = false;
+    }
+
     void Initialize()
     {
         for (int i=0; i < createFloorSetCount; ++i)
@@ -45,6 +83,10 @@ public class GameController : MonoBehaviour
 
     void Update ()
     {
+        // ゲーム中でなければ何もしない
+        if (!IsGame)
+            return;
+        
         // ゲームオーバーなら何もしない
         if (IsGameOver)
             return;
@@ -60,10 +102,10 @@ public class GameController : MonoBehaviour
         }*/
 
         // ゲームオーバー判定
-        if (player.transform.position.x < limitAliveFloor)
+        /*if (player.transform.position.x < limitAliveFloor)
         {
             gameOverRutine = StartCoroutine(CreateGameOverRutine());
-        }
+        }*/
 
         // 一定距離まで近づいたフロアセットを消滅させる
         if (floorContainer.transform.childCount > 0)
@@ -93,11 +135,11 @@ public class GameController : MonoBehaviour
         
         // プレイヤキャラクタのジャンプ操作
         // TODO:
-        bool doJump = Input.GetButton("Fire1");
+        /*bool doJump = Input.GetButton("Fire1");
         if (doJump)
         {
             playerJumpRutine = StartCoroutine(CreatePlayerJumpRutine());
-        }
+        }*/
 
         // 足場の回転操作
         bool doRotation = Input.GetButton("Fire2");
@@ -165,25 +207,48 @@ public class GameController : MonoBehaviour
         float rotateAngle = 0f;
         float maxRotateAngle = 360f / maxCreateFloorNum * 2;
 
+        // 回さないオブジェクトを決定
+        var noRotateFloors = (nowFloorGettingOn != null) ? nowFloorGettingOn.gameObject: null;
+
         // 1秒くらいで回転させる
         float passTime = 0f;
-        float limitTime = 1.0f;
-        var baseRotate = transform.rotation;
+        float limitTime = floorMovingTime;
+        // 最初に参照を取っておいて、それぞれの base を取得しておく仕様に変更
+        ArrayList rotateTransforms = new ArrayList();
+        ArrayList baseRotates = new ArrayList();
+        foreach (Transform floorSet in floorContainer.transform)
+        {
+            if (noRotateFloors == null || floorSet != noRotateFloors.transform)
+            {
+                rotateTransforms.Add(floorSet.gameObject);
+                baseRotates.Add(floorSet.rotation);
+            }
+        }
+
         while ((passTime += Time.deltaTime) <= limitTime)
         {
             rotateAngle = maxRotateAngle * passTime / limitTime;
-            foreach (Transform floorSet in floorContainer.transform)
+            for (int i=0; i < rotateTransforms.Count; ++i)
             {
-                floorSet.rotation = baseRotate * Quaternion.Euler(0, 0, rotateAngle);
+                GameObject floorSet = (GameObject)rotateTransforms[i];
+                if (floorSet != null)
+                {
+                    var baseRotate = (Quaternion)baseRotates[i];
+                    floorSet.transform.rotation = baseRotate * Quaternion.Euler(0, 0, rotateAngle);
+                }
             }
             yield return null;
         }
         // 最後に合わせる
-        foreach (Transform floorSet in floorContainer.transform)
+        for (int i = 0; i < rotateTransforms.Count; ++i)
         {
-            floorSet.rotation = baseRotate * Quaternion.Euler(0, 0, maxRotateAngle);
+            GameObject floorSet = (GameObject)rotateTransforms[i];
+            if (floorSet != null)
+            {
+                var baseRotate = (Quaternion)baseRotates[i];
+                floorSet.transform.rotation = baseRotate * Quaternion.Euler(0, 0, maxRotateAngle);
+            }
         }
-        transform.rotation *= Quaternion.Euler(0, 0, maxRotateAngle);
 
         floorRotationRutine = null;
     }
@@ -202,6 +267,8 @@ public class GameController : MonoBehaviour
         Debug.Log("GameOver");
 
         yield return null;
+
+        GameExit();
 
         gameOverRutine = null;
     }
