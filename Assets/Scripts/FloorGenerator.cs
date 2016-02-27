@@ -5,20 +5,20 @@ public class FloorGenerator : MonoBehaviour
 {
     public GameObject floorPrefab;
     public Vector2 circleCenter;
-    public int maxCreateFloorNum = 6;
 
     public float createFloorProbability = 0.7f;
 
     public Transform floorContainer;
+    public GameController gameController;
 
-    void Start()
+    IEnumerator Start()
     {
         //floorContainer = transform.root.Find("FloorContainer");
 
-        // test
-        CreateFloor(5f);
-        CreateFloor(8f);
-        CreateFloor(11f);
+        yield return null;
+        gameController = this.GetComponent<GameController>();
+
+        yield return null;
     }
 
     public void CreateFloor(float distance)
@@ -30,11 +30,11 @@ public class FloorGenerator : MonoBehaviour
 
         var floorSetScript = setObject.AddComponent<FloorSet>();
         floorSetScript.distance = distance;
-        floorSetScript.maxCreateNum = maxCreateFloorNum;
+        floorSetScript.maxCreateNum = gameController.maxCreateFloorNum;
 
         // フロアを自動配置
-        float angleMargin = Mathf.PI / maxCreateFloorNum * 2;
-        for (int i = 0; i < maxCreateFloorNum; ++i)
+        float angleMargin = Mathf.PI / gameController.maxCreateFloorNum * 2;
+        for (int i = 0; i < gameController.maxCreateFloorNum; ++i)
         {
             bool isCreate = (Random.Range(0f, 1f) <= createFloorProbability);
             if (isCreate)
@@ -42,6 +42,7 @@ public class FloorGenerator : MonoBehaviour
                 float angle = angleMargin * i;
                 var floor = Instantiate(floorPrefab, new Vector3(distance * Mathf.Cos(angle), distance * Mathf.Sin(angle), 0), Quaternion.identity) as GameObject;
                 floor.transform.parent = setObject.transform;
+                floor.name = string.Format("{0}_Floor", i);
             }
         }
     }
